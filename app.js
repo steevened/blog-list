@@ -1,40 +1,28 @@
-const http = require('http')
 const express = require('express')
-const app = express()
 const cors = require('cors')
+const config = require('./utils/config')
+const middleware = require('./utils/middleware')
+const logger = require('./utils/logger')
 const mongoose = require('mongoose')
+const blogsRouter = require('./controllers/blogs')
+const app = express()
 
-const blogSchema = new mongoose.Schema({
-  title: String,
-  author: String,
-  url: String,
-  likes: Number,
-})
+logger.info('connecting to', config.MONGODB_URI)
 
-const Blog = mongoose.model('Blog', blogSchema)
-
-const mongoUrl =
-  'mongodb+srv://steevened:steevened@cluster0.behi3du.mongodb.net/?retryWrites=true&w=majority'
-mongoose.connect(mongoUrl)
+mongoose
+  .connect(config.MONGODB_URI)
+  .then(() => {
+    logger.info('connected to mongodb')
+  })
+  .catch(() => {
+    logger.error('error connection to mongodb:', error.message)
+  })
 
 app.use(cors())
 app.use(express.json())
+// app.use(express.static('build'))
+app.use('/api', blogsRouter)
+app.use(middleware.unknownEndpoint)
+app.use(middleware.errorHandler)
 
-app.get('/api/blogs', (req, res) => {
-  Blog.find({}).then((blogs) => {
-    res.json(blogs)
-  })
-})
-
-app.post('/api/blogs', (req, res) => {
-  const blog = new Blog(req.body)
-
-  blog.save().then((result) => {
-    res.status(201).json(result)
-  })
-})
-
-const PORT = 3003
-app.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`)
-})
+module.exports = app
