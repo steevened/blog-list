@@ -4,7 +4,7 @@ const blogs = [
   {
     title: 'React patterns',
     author: 'Michael Chan',
-    url: 'https://reactpatterns.com/',
+    url: 'url',
     likes: 7,
   },
   {
