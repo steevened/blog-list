@@ -7,13 +7,19 @@ const helper = require('./test_helper')
 
 beforeEach(async () => {
   await Blog.deleteMany({})
-  let blogObject = new Blog(helper.blogs[0])
-  await blogObject.save()
-  blogObject = new Blog(helper.blogs[1])
-  await blogObject.save()
+  console.log('cleared')
+  await Blog.insertMany(helper.blogs)
+
+  // const blogsObject = helper.blogs.map((blog) => new Blog(blog))
+
+  // const promiseArray = blogsObject.map((blog) => blog.save())
+  // await Promise.all(promiseArray)
+
+  console.log('done')
 })
 
 test('all blogs are returned as json', async () => {
+  console.log('entered test')
   await api
     .get('/api/blogs')
     .expect(200)
@@ -25,47 +31,45 @@ test('all blogs are returned', async () => {
   expect(response.body).toHaveLength(helper.blogs.length)
 })
 
-// test('a specific author within the returned blogs', async () => {
-//   const response = await api.get('/api/blogs')
-//   const authors = response.body.map((r) => r.author)
+test('a specific author within the returned blogs', async () => {
+  const response = await api.get('/api/blogs')
+  const authors = response.body.map((r) => r.author)
 
-//   expect(authors).toContain('Edsger W. Dijkstra')
+  expect(authors).toContain('Edsger W. Dijkstra')
+})
+
+test('a valid blog can be added', async () => {
+  const newBlog = {
+    title: 'florida',
+    author: 'miami',
+    url: 'sfafsd',
+    likes: 22,
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  const response = await api.get('/api/blogs')
+  const titles = response.body.map((r) => r.title)
+
+  expect(response.body).toHaveLength(helper.blogs.length + 1)
+  expect(titles).toContain('florida')
+})
+
+test('a unique identifier is named id', async () => {
+  const response = await api.get('/api/blogs')
+  expect(response.body[0].id).toBeDefined()
+})
+
+// test('if likes are missing, the default value is 0', async (req, res) => {
+//   const response = await api.get('/api/blogs')
 // })
 
-// test('a valid blog can be added', async () => {
-//   const newBlog = {
-//     title: 'florida',
-//     author: 'miami',
-//     url: 'sfafsd',
-//     likes: 22,
-//   }
-
-//   await api
-//     .post('/api/blogs')
-//     .send(newBlog)
-//     .expect(201)
-//     .expect('Content-Type', /application\/json/)
-
-//   const response = await api.get('/api/blogs')
-//   const titles = response.body.map((r) => r.title)
-
-//   expect(response.body).toHaveLength(blogs.length + 1)
-//   expect(titles).toContain('florida')
-// })
-
-// test('blog without title is not added', async () => {
-//   const newBlog = {
-//     author: 'miami',
-//     url: 'sfafsd',
-//     likes: 22,
-//   }
-
-//   await api.post('/api/blogs').send(newBlog).expect(400)
-
-//   const response = await api.get('/api/blogs')
-//   expect(response.body).toHaveLength(blogs)
-// })
+jest.setTimeout(25000)
 
 afterAll(() => {
   mongoose.connection.close()
-}, 100000)
+})
